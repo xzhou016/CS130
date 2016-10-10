@@ -70,42 +70,27 @@ void application::draw_event()
 
     //
     // create some various objects in the world
-    //
-    // glPushMatrix();
-    // glColor3f(1, 0, 0);
-    // glTranslatef(5, 1, -5);
-    // glScalef(0.5, 0.5, 0.5);
-    // glRotatef(t.elapsed()*180, 0, 1, 0);
-    // solid ? glutSolidSphere(1, 20, 20) : glutWireSphere(1, 20, 20);
-    // glPopMatrix();
 
-    //rotating dodecahedron
+    //1st planet
     glPushMatrix();
     glColor3f(1,0.9,7);
-    glTranslatef(7*cos(t.elapsed()), 1, 7*sin(t.elapsed()));
+    glTranslatef(3*cos(t.elapsed()), 2, 3*sin(t.elapsed()));
     glScalef(0.5, 0.5, 0.5);
     glRotatef(t.elapsed()*180, 0, 1, 0);
     solid ? glutSolidDodecahedron() : glutWireDodecahedron();
     glPopMatrix();
 
-    // glPushMatrix();
-    // glColor3f(0, 1, 1);
-    // glTranslatef(-5, 1, 5);
-    // solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
-    // glPopMatrix();
-    //
-    // glPushMatrix();
-    // glColor3f(0, 0, 1);
-    // glTranslatef(-5, 1, -5);
-    // solid ? glutSolidCone(1, 2, 10, 10) : glutWireCone(1, 2, 10, 10);
-    // glPopMatrix();
-    //
-    // glPushMatrix();
-    // glColor3f(0, 1, 0);
-    // glTranslatef(5, 0.5, 5);
-    // solid ? glutSolidCube(1) : glutWireCube(1);
-    // glPopMatrix();
+    //2nd planet
+    glPushMatrix();
+    glColor3f(1,1.5,4);
+    glTranslatef(5*cos(5), 2, 5*sin(5));
+    glTranslatef(5*cos(t.elapsed()), 2, 5*sin(t.elapsed()));
+    glScalef(0.5, 0.5, 0.5);
+    glRotatef(t.elapsed()*180, 0, 1, 0);
+    solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+    glPopMatrix();
 
+    //Star
     glPushMatrix();
     glColor3f(1, 1, 0);
     glTranslatef(0, 2, 0);
@@ -185,3 +170,21 @@ void draw_grid()
     glEnd();
     glEnable(GL_LIGHTING);
 }
+
+// glPushMatrix();
+// glColor3f(0, 1, 1);
+// glTranslatef(-5, 1, 5);
+// solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
+// glPopMatrix();
+//
+// glPushMatrix();
+// glColor3f(0, 0, 1);
+// glTranslatef(-5, 1, -5);
+// solid ? glutSolidCone(1, 2, 10, 10) : glutWireCone(1, 2, 10, 10);
+// glPopMatrix();
+//
+// glPushMatrix();
+// glColor3f(0, 1, 0);
+// glTranslatef(5, 0.5, 5);
+// solid ? glutSolidCube(1) : glutWireCube(1);
+// glPopMatrix();
