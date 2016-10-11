@@ -70,35 +70,117 @@ void application::draw_event()
 
     //
     // create some various objects in the world
-
-    //1st planet
-    glPushMatrix();
-    glColor3f(1,0.9,7);
-    glTranslatef(3*cos(t.elapsed()), 2, 3*sin(t.elapsed()));
-    glScalef(0.5, 0.5, 0.5);
-    glRotatef(t.elapsed()*180, 0, 1, 0);
-    solid ? glutSolidDodecahedron() : glutWireDodecahedron();
-    glPopMatrix();
-
-    //2nd planet
-    glPushMatrix();
-    glColor3f(1,1.5,4);
-    glTranslatef(5*cos(5), 2, 5*sin(5));
-    glTranslatef(5*cos(t.elapsed()), 2, 5*sin(t.elapsed()));
-    glScalef(0.5, 0.5, 0.5);
-    glRotatef(t.elapsed()*180, 0, 1, 0);
-    solid ? glutSolidDodecahedron() : glutWireDodecahedron();
-    glPopMatrix();
-
     //Star
     glPushMatrix();
     glColor3f(1, 1, 0);
     glTranslatef(0, 2, 0);
     // rotate 180 degrees/second about the y-axis
-    //glRotatef(t.elapsed()*180, 0, 1, 0);
+    glRotatef(t.elapsed()*180, 0, 1, 0);
     glScalef(1, 1, 1);
-    solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+    solid ? glutSolidTeapot(2) : glutWireTeapot(2);
+        //1st planet
+        glPushMatrix();
+        glColor3f(1,0.9,7);
+        glTranslatef(5*cos(t.elapsed()), 0, 5*sin(t.elapsed()));
+        glScalef(0.5, 0.5, 0.5);
+        glRotatef(t.elapsed()*180, 0, 1, 0);
+        solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+            //moon
+            glPushMatrix();
+            glColor3f(1,1.5,4);
+            glTranslatef(3*cos(t.elapsed()), 0, 3*sin(t.elapsed()));
+            glScalef(0.5, 0.5, 0.5);
+            glRotatef(t.elapsed()*180, 1, 1, 0);
+            solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+            glPopMatrix();
+        glPopMatrix();
+
+        //2nd planet
+        glPushMatrix();
+        glColor3f(1,1,0);
+        glTranslatef(cos(t.elapsed()*90), sin(t.elapsed()*90), 7.5*sin(t.elapsed()));
+        glScalef(0.2, 0.2, 0.2);
+        glRotatef(t.elapsed()*90, 1, 0, 0);
+        glRotatef(t.elapsed()*180, 0, 1, 0);
+        solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+        glPopMatrix();
+
+        //3rd planet
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(9*cos(t.elapsed()), 9*cos(t.elapsed()), 9*sin(t.elapsed()));
+        glScalef(0.2, 0.2, 0.2);
+        glRotatef(t.elapsed()*180, 0, -1, 0);
+        solid ? glutSolidDodecahedron() : glutWireDodecahedron();
+        glPopMatrix();
+
+
+
     glPopMatrix();
+
+
+    //car
+    glPushMatrix();
+    glColor3f(1,0,0);
+    glTranslatef(cos(t.elapsed()), 2, 16*sin(t.elapsed()));
+    glScalef(1, 1, 1);
+    //glRotatef(t.elapsed()*180, 0, -1, 0);
+    solid ? glutSolidCube(2) : glutWireCube(2);
+
+        //wheels
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(1, -1, 1);
+        glScalef(0.3, 0.3, 0.3);
+        glRotatef(90, 0, 1, 0);
+        solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
+        glPopMatrix();
+
+        //wheels
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(1, -1, -1);
+        glScalef(0.3, 0.3, 0.3);
+        glRotatef(90, 0, 1, 0);
+        solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
+        glPopMatrix();
+
+        //wheels
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(-1, -1, -1);
+        glScalef(0.3, 0.3, 0.3);
+        glRotatef(90, 0, 1, 0);
+        solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
+        glPopMatrix();
+
+        //wheels
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(-1, -1, 1);
+        glScalef(0.3, 0.3, 0.3);
+        glRotatef(90, 0, 1, 0);
+        solid ? glutSolidTorus(0.5, 1, 20, 20) : glutWireTorus(0.5, 1, 20, 20);
+        glPopMatrix();
+
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(0, 0, 1);
+        glScalef(0.7, 0.7, 0.7);
+        //glRotatef(t.elapsed()*180, 0, -1, 0);
+        solid ? glutSolidCube(2) : glutWireCube(2);
+        glPopMatrix();
+
+        glPushMatrix();
+        glColor3f(1,0,0);
+        glTranslatef(0, 0, -1);
+        glScalef(0.7, 0.7, 0.7);
+        //glRotatef(t.elapsed()*180, 0, -1, 0);
+        solid ? glutSolidCube(2) : glutWireCube(2);
+        glPopMatrix();
+
+    glPopMatrix();
+
 }
 
 // triggered when mouse is clicked
