@@ -19,7 +19,7 @@ sub run_test
     {
         print "FAIL: ($file) Diff test timed out.\n";
     }
-    elsif(/^$token ([0-9.]+)$/)
+    elsif(/$token ([0-9.]+)$/)
     {
         if($1+0>$max_error)
         {
@@ -43,7 +43,7 @@ sub run_test
         {
             print "FAIL: ($file) Diff test timed out.\n";
         }
-        elsif(/^$token ([0-9.]+)$/)
+        elsif(/$token ([0-9.]+)$/)
         {
             if($1+0>$max_time)
             {
