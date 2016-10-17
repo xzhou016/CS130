@@ -58,11 +58,13 @@ struct mglMatrix {
 };
 mglMatrix render_matrix;
 
-stack<mglMatrix> render_stack;
+stack<mglMatrix> render_model_stack;
+stack<mglMatrix> render_proj_stack;
 
- MGLbool render_started;
- MGLint  render_poly_mode;
- MGLint  render_matrix_state;
+
+ MGLbool        render_started;
+ MGLint         render_poly_mode;
+ MGLmatrix_mode render_state = MGL_MODELVIEW;
 
 /**
  * Standard macro to report errors
@@ -154,10 +156,13 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
+
     mglVertices node;
     node = {.vert_x = x, .vert_y = y, .vert_z = x, .vert_w = 1};
 
     vertex_set.push_back(node);
+
+
 
 }
 
@@ -166,7 +171,28 @@ void mglVertex3(MGLfloat x,
  */
 void mglMatrixMode(MGLmatrix_mode mode)
 {
-    render_matrix_state = mode;
+    switch (mode) {
+        case MGL_MODELVIEW: {
+            if(render_state != mode) {
+                render_state = MGL_PROJECTION;
+                mglPushMatrix();
+            }
+            render_matrix = render_model_stack.top();
+            render_state = mode;
+            break;
+        }
+        case MGL_PROJECTION: {
+            if (render_state != mode) {
+                render_state = MGL_MODELVIEW;
+                mglPushMatrix();
+            }
+            render_matrix = render_proj_stack.top();
+            render_state = mode;
+            break;
+        }
+        default:    MGL_ERROR("Cannot find mode"); break;
+    }
+
 }
 
 /**
@@ -175,7 +201,14 @@ void mglMatrixMode(MGLmatrix_mode mode)
  */
 void mglPushMatrix()
 {
-    // render_stack.push(render_matrix);
+    switch (render_state) {
+        case MGL_MODELVIEW:
+            render_model_stack.push(render_matrix);break;
+        case MGL_PROJECTION:
+            render_proj_stack.push(render_matrix); break;
+        default:
+            MGL_ERROR("Cannot push onto stack");
+    }
 }
 
 /**
@@ -184,8 +217,21 @@ void mglPushMatrix()
  */
 void mglPopMatrix()
 {
-    // render_matrix = render_stack.top();
-    // render_stack.pop();
+    switch (render_state) {
+        case MGL_MODELVIEW:{
+            render_matrix = render_model_stack.top();
+            render_model_stack.pop();
+            break;
+        }
+        case MGL_PROJECTION: {
+            render_matrix = render_proj_stack.top();
+            render_proj_stack.pop();
+            break;
+        }
+
+        default:
+            MGL_ERROR("Cannot pop stack");
+    }
 }
 
 /**
@@ -252,6 +298,13 @@ void mglTranslate(MGLfloat x,
                   MGLfloat y,
                   MGLfloat z)
 {
+    mglMatrix trans_matrix;
+    trans_matrix.fMatrix[12] = x;
+    trans_matrix.fMatrix[13] = y;
+    trans_matrix.fMatrix[14] = z;
+
+    mglMultMatrix(trans_matrix.fMatrix);
+
 }
 
 /**
@@ -264,6 +317,7 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+
 }
 
 /**
