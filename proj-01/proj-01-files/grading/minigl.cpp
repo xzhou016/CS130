@@ -244,6 +244,26 @@ void mglMultMatrix(const MGLfloat *matrix)
     render_matrix = mat_sum;
 }
 
+// void mglMultMatrix(MGLfloat x,
+//               MGLfloat y,
+//               MGLfloat z)
+// {
+//     mglMatrix   mat_sum;
+//     MGLsize     sum_index = 0;
+//
+//     for (size_t i = 0; i < 4; i++) {
+//         for (size_t j = 0; j < 4; j++) {
+//             mat_sum.fMatrix[sum_index] = matrix[j] * render_matrix.fMatrix[i]
+//                                 + matrix[j+4] * render_matrix.fMatrix[i + 1]
+//                                 + matrix[j+8] * render_matrix.fMatrix[i + 2]
+//                                 + matrix[j+12] * render_matrix.fMatrix[i + 3];
+//             sum_index++;
+//         }
+//     }
+//
+//     render_matrix = mat_sum;
+// }
+
 /**
  * Multiply the current matrix by the translation matrix
  * for the translation vector given by (x, y, z).
@@ -306,18 +326,6 @@ void mglOrtho(MGLfloat left,
               MGLfloat near,
               MGLfloat far)
 {
-    mglMatrix compute_ortho;
-
-    compute_ortho.fMatrix[ 0] = 2 /(right - left);
-    compute_ortho.fMatrix[ 5] = 2 /(top - bottom);
-    compute_ortho.fMatrix[10] = -2/(far - near);
-    compute_ortho.fMatrix[12] = -(right+left)/(right - left);
-    compute_ortho.fMatrix[13] = -(top+bottom)/(top - bottom);
-    compute_ortho.fMatrix[14] = -(far+near)  /(far - near);
-
-    mglMultMatrix(compute_ortho.fMatrix);
-
-
 }
 
 /**
