@@ -45,11 +45,20 @@ void debugShader(GLuint vertexShader, GLuint fragmentShader, GLuint shaderProgra
 GLuint loadShader(const char* vertexfilename, const char* fragmentfilename)
 {
     // Functions you should know to implement this
-    // glCreateShader
-    // glShaderSource
-    // glCompileShader
-    // glAttachShader
-    // glCreateProgram
+    GLuint v_shader = glCreateShader(GL_VERTEX_SHADER);
+    const char *vs = getTextFile(vertexfilename).c_str();
+    const char *vv = vs;
+    const int string_size = getTextFile(vertexfilename).size();
+    const int * str_ptr = string_size;
+
+    const char *fs = getTextFile(fragmentfilename).c_str();
+    const char *fv = fs;
+    glShaderSource(v_shader, 1, &vv, str_ptr);
+    glCompileShader(v_shader);
+
+    GLuint my_program = glCreateProgram();
+    glAttachShader(my_program, v_shader);
+    glLinkProgram(my_program);
     // glLinkProgram
     // http:// www.opengl.org/sdk/docs/man/
     // http:// www.lighthouse3d.com/tutorials/glsl-tutorial/creating-a-shader/
