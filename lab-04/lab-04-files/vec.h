@@ -121,6 +121,7 @@ std::ostream& operator << (std::ostream& out, const vec<T,n> & u)
 
 typedef vec<float,2> vec2;
 typedef vec<float,3> vec3;
+typedef vec<float,4> vec4;
 typedef vec<int,2> ivec2;
 
 #endif

@@ -1,0 +1,12 @@
+// transform normal to camera space and normalize it
+vec3 n = normalize(m_normal * normal);
+
+// compute the intensity as the dot product
+// the max prevents negative intensity values
+float intensity = max(dot(n, l_dir), 0.0);
+
+// Compute the color per vertex
+DataOut.color = intensity * diffuse;
+
+// transform the vertex coordinates
+gl_Position = m_pvm * position;

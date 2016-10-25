@@ -1,0 +1,27 @@
+varying vec4 diffuse;
+
+void main()
+{
+	//get position
+	gl_Position = ftransform();
+
+	//create the normal for the primitive
+	vec3 normal = gl_Normal;
+
+	//find the position of light source
+	vec3 lightVector = gl_LightSource[0].position.xyz - gl_Vertex.xyz;
+
+	//find distance away from the light source
+	float dist = length(lightVector);
+
+	float attenuation = 1.0 / (gl_LightSource[0].constantAttenuation
+								+ gl_LightSource[0].linearAttenuation * dist+
+								+ gl_LightSource[0].quadraticAttenuation * dist * dist);
+
+	lightVector = normalize(lightVector);
+	float nXdir = max(0.0, dot(normal, lightVector));
+
+	diffuse = gl_LightSource[0].diffuse * nXdir * attenuation;
+
+
+}

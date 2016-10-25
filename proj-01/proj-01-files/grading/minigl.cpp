@@ -25,15 +25,15 @@ using namespace std;
 /**
  * Global values for rasterization
  */
- struct mglVertices {
+struct mglVertices {
     MGLfloat vert_x;
     MGLfloat vert_y;
     MGLfloat vert_z;
     MGLfloat vert_w;
 
     MGLpixel pixel_color;
- };
- vector<mglVertices> vertex_set;
+};
+vector<mglVertices> vertex_set;
 
 struct mglMatrix {
      MGLfloat fMatrix[16];
@@ -55,14 +55,33 @@ struct mglMatrix {
         return *this;
     }
 
+    // mglMatrix& operator * (mglMatrix B){
+    //     MGLfloat sum[16];
+    //
+    //     for (size_t i = 0; i < 4; i++) {
+    //         for (size_t j = 0; j < 4; j++) {
+    //             int index = j*4;
+    //             sum[index + i] = B.fMatrix[index]*fMatrix[i]
+    //                                 + B.fMatrix[index + 4]*fMatrix[i + 1]
+    //                                 + B.fMatrix[index + 8]*fMatrix[i + 2]
+    //                                 + B.fMatrix[index + 12]*fMatrix[i + 3];
+    //         }
+    //     }
+    // }
+
 };
-mglMatrix render_matrix;
 
-stack<mglMatrix> render_stack;
+/*******************
+ *Global variables
+ */
+mglMatrix render_matrix;   //4x4 matrix for transformation
 
- MGLbool render_started;
- MGLint  render_poly_mode;
- MGLint  render_matrix_state;
+stack<mglMatrix> render_model_stack;   //model view
+stack<mglMatrix> render_proj_stack;    //projection
+
+ MGLbool        render_started;               //check if render started
+ MGLint         render_poly_mode;             //choose between v3 and quad
+ MGLmatrix_mode render_state = MGL_MODELVIEW; //FSM for choosing modelview and projection
 
 /**
  * Standard macro to report errors
@@ -120,17 +139,8 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
-    // switch (render_poly_mode) {
-    //     case MGL_TRIANGLES: {
+    // for (std::vector<mglVertices> itr = vertex_set.begin(); itr != vertex_set.end(); itr++) {
     //
-    //         break;
-    //     }
-    //     case MGL_QUADS: {
-    //         break;
-    //     }
-    //
-    //     default :
-    //         MGL_ERROR("Incompelete render!");
     // }
 }
 
@@ -154,11 +164,15 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-    mglVertices node;
+    mglVertices node; //create a vertex
     node = {.vert_x = x, .vert_y = y, .vert_z = x, .vert_w = 1};
 
-    vertex_set.push_back(node);
+    mglMatrix r_modelview   = render_model_stack.top();
+    mglMatrix r_projection  = render_proj_stack.top();
 
+
+    //do proj*modelview*vertex
+    vertex_set.push_back(node);
 }
 
 /**
@@ -166,7 +180,28 @@ void mglVertex3(MGLfloat x,
  */
 void mglMatrixMode(MGLmatrix_mode mode)
 {
-    render_matrix_state = mode;
+    switch (mode) {
+        case MGL_MODELVIEW: {
+            if(render_state != mode) {
+                render_state = MGL_PROJECTION;
+                mglPushMatrix();
+            }
+            render_matrix = render_model_stack.top();
+            render_state = mode;
+            break;
+        }
+        case MGL_PROJECTION: {
+            if (render_state != mode) {
+                render_state = MGL_MODELVIEW;
+                mglPushMatrix();
+            }
+            render_matrix = render_proj_stack.top();
+            render_state = mode;
+            break;
+        }
+        default:    MGL_ERROR("Cannot find mode"); break;
+    }
+
 }
 
 /**
@@ -175,7 +210,14 @@ void mglMatrixMode(MGLmatrix_mode mode)
  */
 void mglPushMatrix()
 {
-    // render_stack.push(render_matrix);
+    switch (render_state) {
+        case MGL_MODELVIEW:
+            render_model_stack.push(render_matrix);break;
+        case MGL_PROJECTION:
+            render_proj_stack.push(render_matrix); break;
+        default:
+            MGL_ERROR("Cannot push onto stack");
+    }
 }
 
 /**
@@ -184,8 +226,21 @@ void mglPushMatrix()
  */
 void mglPopMatrix()
 {
-    // render_matrix = render_stack.top();
-    // render_stack.pop();
+    switch (render_state) {
+        case MGL_MODELVIEW:{
+            render_matrix = render_model_stack.top();
+            render_model_stack.pop();
+            break;
+        }
+        case MGL_PROJECTION: {
+            render_matrix = render_proj_stack.top();
+            render_proj_stack.pop();
+            break;
+        }
+
+        default:
+            MGL_ERROR("Cannot pop stack");
+    }
 }
 
 /**
@@ -244,26 +299,6 @@ void mglMultMatrix(const MGLfloat *matrix)
     render_matrix = mat_sum;
 }
 
-// void mglMultMatrix(MGLfloat x,
-//               MGLfloat y,
-//               MGLfloat z)
-// {
-//     mglMatrix   mat_sum;
-//     MGLsize     sum_index = 0;
-//
-//     for (size_t i = 0; i < 4; i++) {
-//         for (size_t j = 0; j < 4; j++) {
-//             mat_sum.fMatrix[sum_index] = matrix[j] * render_matrix.fMatrix[i]
-//                                 + matrix[j+4] * render_matrix.fMatrix[i + 1]
-//                                 + matrix[j+8] * render_matrix.fMatrix[i + 2]
-//                                 + matrix[j+12] * render_matrix.fMatrix[i + 3];
-//             sum_index++;
-//         }
-//     }
-//
-//     render_matrix = mat_sum;
-// }
-
 /**
  * Multiply the current matrix by the translation matrix
  * for the translation vector given by (x, y, z).
@@ -272,6 +307,13 @@ void mglTranslate(MGLfloat x,
                   MGLfloat y,
                   MGLfloat z)
 {
+    mglMatrix trans_matrix;
+    trans_matrix.fMatrix[12] = x;
+    trans_matrix.fMatrix[13] = y;
+    trans_matrix.fMatrix[14] = z;
+
+    mglMultMatrix(trans_matrix.fMatrix);
+
 }
 
 /**
@@ -284,6 +326,7 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+
 }
 
 /**
@@ -326,6 +369,18 @@ void mglOrtho(MGLfloat left,
               MGLfloat near,
               MGLfloat far)
 {
+    mglMatrix compute_ortho;
+
+    compute_ortho.fMatrix[ 0] = 2 /(right - left);
+    compute_ortho.fMatrix[ 5] = 2 /(top - bottom);
+    compute_ortho.fMatrix[10] = -2/(far - near);
+    compute_ortho.fMatrix[12] = -(right+left)/(right - left);
+    compute_ortho.fMatrix[13] = -(top+bottom)/(top - bottom);
+    compute_ortho.fMatrix[14] = -(far+near)  /(far - near);
+
+    mglMultMatrix(compute_ortho.fMatrix);
+
+
 }
 
 /**

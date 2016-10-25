@@ -46,25 +46,28 @@ GLuint loadShader(const char* vertexfilename, const char* fragmentfilename)
 {
     // Functions you should know to implement this
     GLuint v_shader = glCreateShader(GL_VERTEX_SHADER);
-    const char *vs = getTextFile(vertexfilename).c_str();
-    const char *vv = vs;
-    const int string_size = getTextFile(vertexfilename).size();
-    const int * str_ptr = string_size;
-
-    const char *fs = getTextFile(fragmentfilename).c_str();
-    const char *fv = fs;
-    glShaderSource(v_shader, 1, &vv, str_ptr);
+    string vF = getTextFile(vertexfilename);
+    char* s = &vF[0];
+    glShaderSource(v_shader, 1, (const GLchar**)&s, NULL);
     glCompileShader(v_shader);
+
+    GLuint f_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    string fF = getTextFile(fragmentfilename);
+    s = &fF[0];
+    glShaderSource(f_shader, 1, (const GLchar**)&s, NULL);
+    glCompileShader(f_shader);
 
     GLuint my_program = glCreateProgram();
     glAttachShader(my_program, v_shader);
+    glAttachShader(my_program, f_shader);
     glLinkProgram(my_program);
+    debugShader(v_shader, f_shader, my_program);
     // glLinkProgram
     // http:// www.opengl.org/sdk/docs/man/
     // http:// www.lighthouse3d.com/tutorials/glsl-tutorial/creating-a-shader/
     // You are provided with the function getTextFile to load a string from a text file
 
-    return 0;
+    return my_program;
 }
 
 application::application()

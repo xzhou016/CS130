@@ -21,7 +21,7 @@
  * is useful for getting your pixels in exactly the right places.
  *
  * This version also computes the total error.  The output will look something
- * like "T1Ec1tODlReazVDANnz6muSy 0.39".  This indicates that about 0.39% of the pixels in
+ * like "R6qFOvzaiMEjlHgc3GaIF4Mb 0.39".  This indicates that about 0.39% of the pixels in
  * the image are completely wrong.  Pixels can be approximate; a pixel whose
  * color is slightly off contributes little to the total error.
  *
@@ -161,7 +161,7 @@ void Compare(int argc, char** argv)
     Dump_png(pixel_data_gl,width,height,"gl.png");
     Dump_png(pixel_data_mgl,width,height,"mgl.png");
     Dump_png(pixel_data_diff,width,height,"diff.png");
-    printf("T1Ec1tODlReazVDANnz6muSy %.2f\n",total_diff/(2.55*width*height));
+    printf("R6qFOvzaiMEjlHgc3GaIF4Mb %.2f\n",total_diff/(2.55*width*height));
 }
 
 void Benchmark()
@@ -176,7 +176,7 @@ void Benchmark()
     clock_gettime(CLOCK_MONOTONIC, &t1);
     long long a0 = (long long)t0.tv_sec*1000000000+t0.tv_nsec;
     long long a1 = (long long)t1.tv_sec*1000000000+t1.tv_nsec;
-    printf("T1Ec1tODlReazVDANnz6muSy %.2f\n",(a1-a0)*1e-6);
+    printf("R6qFOvzaiMEjlHgc3GaIF4Mb %.2f\n",(a1-a0)*1e-6);
 }
 
 int main(int argc, char** argv)

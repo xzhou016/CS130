@@ -25,26 +25,34 @@ using namespace std;
 /**
  * Global values for rasterization
  */
- struct mglVertices {
+struct mglVertices {
     MGLfloat vert_x;
     MGLfloat vert_y;
     MGLfloat vert_z;
     MGLfloat vert_w;
 
     MGLpixel pixel_color;
- };
- vector<mglVertices> vertex_set;
+};
+
+//global vector containing all processed vertices
+vector<mglVertices> vertex_set;
 
 struct mglMatrix {
      MGLfloat fMatrix[16];
 
      mglMatrix(){make_zero();}
 
-     void make_zero()
-    {for(size_t i = 0; i < 16; i++) fMatrix[i] = 0;}
-
-    void make_id()
-    {make_zero();for(int i = 0; i < 16; i+=5) fMatrix[i] = 1;}
+     //= the zero matrix
+     void make_zero(){
+         for(size_t i = 0; i < 16; i++)
+            fMatrix[i] = 0;
+     }
+    //= the identity matrix
+    void make_id(){
+        make_zero();
+        for(int i = 0; i < 16; i+=5)
+            fMatrix[i] = 1;
+    }
 
     mglMatrix& operator = (const MGLfloat *matrix){
         int other_mat_count = 0;
@@ -55,16 +63,57 @@ struct mglMatrix {
         return *this;
     }
 
+    //for multiplying local matrix with a given matrix
+    mglMatrix& operator * (mglMatrix B){
+        MGLfloat sum[16];
+
+        for (size_t i = 0; i < 4; i++) {
+            for (size_t j = 0; j < 4; j++) {
+                sum[j*4 + i] = B.fMatrix[i]     *fMatrix[j*4]
+                            + B.fMatrix[i + 4]  *fMatrix[j*4 + 1]
+                            + B.fMatrix[i + 8]  *fMatrix[j*4 + 2]
+                            + B.fMatrix[i + 12] *fMatrix[j*4 + 3];
+            }
+        }
+
+        for (size_t i = 0; i < 16; i++) {
+            fMatrix[i] = sum[i];
+        }
+        return *this;
+    }
+
+    //for multiplying vertices with the local matrix
+    mglVertices multVerex(mglVertices in_vertex){
+        mglVertices node;
+        vector<MGLfloat> v;
+        for (size_t i = 0; i < 4; i++) {
+            v.push_back(  fMatrix[i]    *in_vertex.vert_x
+                        + fMatrix[i+4]  *in_vertex.vert_y
+                        + fMatrix[i+8]  *in_vertex.vert_z
+                        + fMatrix[i+12] *in_vertex.vert_w);
+        }
+        node = {  .vert_x = v.at(0)
+                , .vert_y = v.at(1)
+                , .vert_z = v.at(2)
+                , .vert_w = v.at(3)};
+        return node;
+    }
+
 };
-mglMatrix render_matrix;
 
-stack<mglMatrix> render_model_stack;
-stack<mglMatrix> render_proj_stack;
+/*******************
+ *Global variables
+ */
+mglMatrix render_matrix;   //4x4 matrix for transformation
 
+stack<mglMatrix> render_model_stack;   //model view
+stack<mglMatrix> render_proj_stack;    //projection
 
- MGLbool        render_started;
- MGLint         render_poly_mode;
- MGLmatrix_mode render_state = MGL_MODELVIEW;
+MGLbool        render_started;               //check if render started
+MGLint         render_poly_mode;             //choose between v3 and quad
+MGLmatrix_mode render_state = MGL_MODELVIEW; //FSM for choosing modelview and projection
+MGLpixel*      render_bary_color;
+MGLpixel*      render_z_buff;
 
 /**
  * Standard macro to report errors
@@ -74,6 +123,10 @@ inline void MGL_ERROR(const char* description) {
     exit(1);
 }
 
+
+MGLfloat comput_area(mglVertices a, mglVertices b, mglVertices c){
+    return (b.vert_x - a.vert_x)*(c.vert_y - a.vert_y) - (b.vert_y - a.vert_y)*(c.vert_x - a.vert_x);
+}
 /**
  * Read pixel data starting with the pixel at coordinates
  * (0, 0), up to (width,  height), into the array
@@ -90,19 +143,28 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
-    // assert(width > 0 && height > 0 ); //make sure w, h are positive
-    //
-    // //create 2-D display
-    // MGLpixel screen[width*height];
-    // MGLfloat z_buffer[width*height];
-    //
-    // for (size_t i = 0; i < width*height; i++) {
-    //     screen[i]   = data[i]; //read raw data, should be 0
-    //     z_buffer[i] = -1;      //z is at infinity
-    // }
-    //
-    // render_matrix.make_id();
+    MGLpixel color = 000000;
 
+    mglVertices a;
+    mglVertices b;
+    mglVertices c;
+    mglVertices p;
+    MGLfloat tri_area = comput_area(a,b,c);
+
+    for (size_t i = 0; i < width; i++) {
+        p.vert_x = i;
+        for (size_t j = 0; j < height; j++) {
+            p.vert_y = j;
+
+            MGLfloat alpha = comput_area(p,b,c)/tri_area;
+            MGLfloat beta = comput_area(a,p,c)/tri_area;
+            MGLfloat gamma = comput_area(a,b,p)/tri_area;
+
+            MGLfloat interpol_c = alpha*a.vert_z + beta*b.vert_z + gamma*c.vert_z;
+            data[width*j + i] = color
+        }
+    }
+    //push it into the framebuffer
 
 }
 
@@ -122,18 +184,7 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
-    // switch (render_poly_mode) {
-    //     case MGL_TRIANGLES: {
-    //
-    //         break;
-    //     }
-    //     case MGL_QUADS: {
-    //         break;
-    //     }
-    //
-    //     default :
-    //         MGL_ERROR("Incompelete render!");
-    // }
+
 }
 
 /**
@@ -156,28 +207,28 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-
-    mglVertices node;
+    mglVertices node; //create a vertex
     node = {.vert_x = x, .vert_y = y, .vert_z = x, .vert_w = 1};
 
-    vertex_set.push_back(node);
+    //get the modelview * projection matrix
+    mglMatrix transformed_geometry =  render_model_stack.top()
+                                    * render_proj_stack.top();
 
-
-
+    //do proj*modelview*vertex
+    vertex_set.push_back(transformed_geometry.multVerex(node));
 }
 
 /**
  * Set the current matrix mode (modelview or projection).
  */
-void mglMatrixMode(MGLmatrix_mode mode)
-{
+void mglMatrixMode(MGLmatrix_mode mode){
     switch (mode) {
         case MGL_MODELVIEW: {
             if(render_state != mode) {
                 render_state = MGL_PROJECTION;
                 mglPushMatrix();
             }
-            render_matrix = render_model_stack.top();
+            //render_matrix = render_model_stack.top();
             render_state = mode;
             break;
         }
@@ -186,7 +237,7 @@ void mglMatrixMode(MGLmatrix_mode mode)
                 render_state = MGL_MODELVIEW;
                 mglPushMatrix();
             }
-            render_matrix = render_proj_stack.top();
+            //render_matrix = render_proj_stack.top();
             render_state = mode;
             break;
         }
@@ -199,8 +250,7 @@ void mglMatrixMode(MGLmatrix_mode mode)
  * Push a copy of the current matrix onto the stack for the
  * current matrix mode.
  */
-void mglPushMatrix()
-{
+void mglPushMatrix(){
     switch (render_state) {
         case MGL_MODELVIEW:
             render_model_stack.push(render_matrix);break;
@@ -215,8 +265,7 @@ void mglPushMatrix()
  * Pop the top matrix from the stack for the current matrix
  * mode.
  */
-void mglPopMatrix()
-{
+void mglPopMatrix(){
     switch (render_state) {
         case MGL_MODELVIEW:{
             render_matrix = render_model_stack.top();
@@ -237,8 +286,7 @@ void mglPopMatrix()
 /**
  * Replace the current matrix with the identity.
  */
-void mglLoadIdentity()
-{
+void mglLoadIdentity(){
     render_matrix.make_id();
 }
 
@@ -254,8 +302,7 @@ void mglLoadIdentity()
  *
  * where ai is the i'th entry of the array.
  */
-void mglLoadMatrix(const MGLfloat *matrix)
-{
+void mglLoadMatrix(const MGLfloat *matrix){
     render_matrix.make_zero();
     render_matrix = matrix;
 }
@@ -272,17 +319,16 @@ void mglLoadMatrix(const MGLfloat *matrix)
  *
  * where ai is the i'th entry of the array.
  */
-void mglMultMatrix(const MGLfloat *matrix)
-{
+void mglMultMatrix(const MGLfloat *matrix){
     mglMatrix   mat_sum;
     MGLsize     sum_index = 0;
 
     for (size_t i = 0; i < 4; i++) {
         for (size_t j = 0; j < 4; j++) {
-            mat_sum.fMatrix[sum_index] = matrix[j] * render_matrix.fMatrix[i]
-                                + matrix[j+4] * render_matrix.fMatrix[i + 1]
-                                + matrix[j+8] * render_matrix.fMatrix[i + 2]
-                                + matrix[j+12] * render_matrix.fMatrix[i + 3];
+            mat_sum.fMatrix[sum_index] = matrix[j*4] * render_matrix.fMatrix[i]
+                                        + matrix[j*4+4] * render_matrix.fMatrix[i + 4]
+                                        + matrix[j*4+8] * render_matrix.fMatrix[i + 8]
+                                        + matrix[j*4+12] * render_matrix.fMatrix[i + 12];
             sum_index++;
         }
     }
@@ -317,7 +363,39 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+    mglMatrix temp_rotate_matrix;
+    MGLfloat rotate_cos = cos(angle*3.1415926/180);
+    MGLfloat rotate_sin = sin(angle*3.1415926/180);
 
+    //normalize
+    MGLfloat magnitude = sqrt(x*x + y*y + z*z);
+    x = x/magnitude;
+    y = y/magnitude;
+    z = z/magnitude;
+
+    //make rotation from given axis and angle
+    //column 1
+    temp_rotate_matrix.fMatrix[0] = rotate_cos + x*x*(1 - rotate_cos);
+    temp_rotate_matrix.fMatrix[1] = y*x*(1 - rotate_cos) + z*rotate_sin;
+    temp_rotate_matrix.fMatrix[2] = z*x*(1 - rotate_cos) - y*rotate_sin;
+    temp_rotate_matrix.fMatrix[3] = 0;
+    //column 2
+    temp_rotate_matrix.fMatrix[4] = x*x*(1 - rotate_cos) - z*rotate_sin;
+    temp_rotate_matrix.fMatrix[5] = rotate_cos + y*y*(1-rotate_cos);
+    temp_rotate_matrix.fMatrix[6] = z*y*(1 - rotate_cos) + x*rotate_sin;
+    temp_rotate_matrix.fMatrix[7] = 0;
+    //column 3
+    temp_rotate_matrix.fMatrix[8] = x*z*(1 - rotate_cos) + y*rotate_sin;
+    temp_rotate_matrix.fMatrix[9] = y*z*(1 - rotate_cos) -   x*rotate_sin;
+    temp_rotate_matrix.fMatrix[10] = rotate_cos + z*z*(1-rotate_cos);
+    temp_rotate_matrix.fMatrix[11] = 0;
+    //column 4
+    temp_rotate_matrix.fMatrix[12] = 0;
+    temp_rotate_matrix.fMatrix[13] = 0;
+    temp_rotate_matrix.fMatrix[14] = 0;
+    temp_rotate_matrix.fMatrix[15] = 1;
+
+    render_matrix = render_matrix*temp_rotate_matrix;
 }
 
 /**
@@ -347,6 +425,21 @@ void mglFrustum(MGLfloat left,
                 MGLfloat near,
                 MGLfloat far)
 {
+    mglMatrix view;
+    view.make_id();
+
+    view.fMatrix[0] = (2*near)/(right - left);
+    view.fMatrix[5] = (2*near)/(top - bottom);
+
+    view.fMatrix[8] = (right + left)/(right - left);
+    view.fMatrix[9] = (top + bottom)/(top - bottom);
+    view.fMatrix[10] = -1*(far + near)/(far - near);
+    view.fMatrix[11] = -1;
+
+    view.fMatrix[14] = -2*far*near/(far - near);
+    view.fMatrix[15] = 0;
+
+    render_matrix = render_matrix*view;
 }
 
 /**
@@ -369,9 +462,7 @@ void mglOrtho(MGLfloat left,
     compute_ortho.fMatrix[13] = -(top+bottom)/(top - bottom);
     compute_ortho.fMatrix[14] = -(far+near)  /(far - near);
 
-    mglMultMatrix(compute_ortho.fMatrix);
-
-
+    render_matrix = render_matrix*compute_ortho;
 }
 
 /**

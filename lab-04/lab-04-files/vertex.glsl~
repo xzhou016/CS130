@@ -1,0 +1,41 @@
+
+float getLight(float normal, int light);
+
+void main()
+{
+	vec3 normal;
+	normal = normalize(gl_NormalMatrix * gl_Normal);
+    
+    	//gl_FrontColor = vec4(1,1,0,1)
+    	gl_FrontColor = getLight(normal, 0);
+   	gl_FrontColor += getLight(normal, 1);
+    
+	gl_Position = ftransform();
+}
+
+
+float getLight(float normal, int light){
+    	vec4 diffuse, ambient, globalAmbient, specular;
+    	vec3 lightDir;
+	float NdotL, NdotHV;
+    	specular = 0;
+   
+    	lightDir = normalize(vec3(gl_LightSource[light].position));
+	NdotL = max(dot(normal, lightDir), 0);
+	
+    	/* Compute the diffuse term */
+	diffuse = gl_FrontMaterial.diffuse * gl_LightSource[light].diffuse;
+
+    	/* Compute the ambient and globalAmbient terms  */
+	ambient = gl_FrontMaterial.ambient * gl_LightSource[light].ambient;
+	globalAmbient = gl_LightModel.ambient * gl_FrontMaterial.ambient;
+    
+   	/* compute the specular term if NdotL is  larger than zero */
+	if (NdotL > 0.0) {
+
+		NdotHV = max(dot(normal, normalize(gl_LightSource[light].halfVector.xyz)),0.0);
+		specular = gl_FrontMaterial.specular * gl_LightSource[light].specular * pow(NdotHV,gl_FrontMaterial.shininess);
+	}
+	
+	return (NdotL * diffuse + globalAmbient + ambient + specular );
+}
